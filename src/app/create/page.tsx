@@ -2,6 +2,23 @@
 import React from 'react';
 import { useEffect } from 'react';
 
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from '@/components/ui/carousel';
+
 const CreatePage = () => {
     const [key, setKey] = React.useState<CryptoKey | null>(null);
     useEffect(() => {
@@ -19,7 +36,10 @@ const CreatePage = () => {
     }, []);
 
     const handleUpload = async () => {
-        const file = (document.querySelector('input[type="file"]') as HTMLInputElement)?.files?.[0];
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        fileInput.click();
+        const file = fileInput.files?.[0];
+
         if (!file) {
             return;
         }
@@ -43,22 +63,47 @@ const CreatePage = () => {
 
         // TODO: Send the encrypted file to the Walrus API
     };
-
     return (
-        <div>
-            <h1>Create Page</h1>
-            <p>{key ? 'Key created' : 'Creating key...'}</p>
-            <input type="file" />
-            <button
-                className="h-12 w-32 rounded-sm bg-gray-200"
-                onClick={handleUpload}
-                disabled={!key}
-            >
-                Upload File
-            </button>
-            <img id="img" />
+        <div className="flex w-full items-center justify-between p-10">
+            {/* Upload Content Card */}
+            <Card className="w-[38%] p-3">
+                <CardHeader>
+                    <CardTitle>Create Content</CardTitle>
+                    <CardDescription>Upload any content of your choosing</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex w-[100%] flex-col items-center justify-center">
+                        <Card className="h-[20vh] w-full"></Card>
+                        <input type="file" className="invisible" />
+                        <Button variant="outline" onClick={handleUpload} disabled={!key}>
+                            Upload File
+                        </Button>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <p className="text-muted-foreground text-center text-sm">
+                        Note: The file will be encrypted before being uploaded.
+                    </p>
+                </CardFooter>
+            </Card>
+
+            {/* Carousel of Previous Uploads */}
+            <Card className="w-[58%] p-4">
+                <CardHeader>
+                    <CardTitle>Posted Content</CardTitle>
+                    <CardDescription>View all of your uploaded content</CardDescription>
+                </CardHeader>
+                <CardContent></CardContent>
+                <CardFooter>
+                    <Button variant="outline" size="sm">
+                        View All
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
     );
 };
+
+// const PostContainer = (img, description) => {
 
 export default CreatePage;
