@@ -38,6 +38,5 @@ jspm_packages
 .next
 
 .env*
-
 build/
 Move.lock
