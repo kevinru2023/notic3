@@ -18,54 +18,37 @@ import { TextUploadForm } from './components/TextUploadForm';
 import { useUploadFile } from '@/hooks/queries';
 
 const CreatePage = () => {
-    const [key, setKey] = React.useState<CryptoKey | null>(null);
-    const [isClient, setIsClient] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [encryptedBlob, setEncryptedBlob] = useState<Blob | null>(null);
-
-    useEffect(() => {
-        setIsClient(true);
-
-        (async () => {
-            const newKey = await crypto.subtle.generateKey(
-                {
-                    name: 'AES-GCM',
-                    length: 256, // Key length in bits
-                },
-                true, // Extractable
-                ['encrypt', 'decrypt'] // Key usages
-            );
-            setKey(newKey);
-        })();
-    }, []);
+    const [key, setKey] = useState<CryptoKey | null>(null);
+    const [iv, setIv] = useState<Uint8Array>(new Uint8Array(12));
+    const [regularKey, setRegularKey] = useState<string | null>(null);
+    const [blobId, setBlobId] = useState<string | null>(null);
 
     const uploadFileMutation = useUploadFile();
 
     useEffect(() => {
+        const newKey = crypto.getRandomValues(new Uint8Array(32));
+        const keyString = Array.from(newKey)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('');
+        setRegularKey(keyString);
+
         crypto.subtle
-            .generateKey(
-                {
-                    name: 'AES-GCM',
-                    length: 256, // Key length in bits
-                },
-                true, // Extractable
-                ['encrypt', 'decrypt'] // Key usages
-            )
-            .then(setKey);
+            .importKey('raw', newKey, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt'])
+            .then((importedKey) => {
+                setKey(importedKey);
+            });
+
+        const newIv = crypto.getRandomValues(new Uint8Array(12));
+        setIv(newIv);
+        console.log('Generated IV:', newIv);
 
         return () => {
             if (previewUrl) URL.revokeObjectURL(previewUrl);
         };
     }, []);
-
-    if (!isClient) {
-        return null;
-    }
-
-    const handleButtonClick = () => {
-        fileInputRef.current?.click();
-    };
 
     const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files ? event.target.files[0] : null;
@@ -80,76 +63,42 @@ const CreatePage = () => {
         const encryptedFile = await crypto.subtle.encrypt(
             {
                 name: 'AES-GCM',
-                iv: new Uint8Array(12), // Initialization vector
+                iv: iv,
             },
             key,
             fileData
         );
-        const blob1 = new Blob([encryptedFile]);
-
-        if (!isClient) {
-            return null;
-        }
 
         setEncryptedBlob(new Blob([encryptedFile]));
+
+        console.log('Encrypted Blob:', new Blob([encryptedFile]));
 
         uploadFileMutation
             .mutateAsync(encryptedFile)
             .then((response) => {
                 console.log('Upload successful:', response);
-                // Handle successful upload (e.g., show success message to user)
+                console.log('Blob ID:', response.newlyCreated.blobObject.blobId);
+                setBlobId(response.newlyCreated.blobObject.blobId);
             })
             .catch((error) => {
                 console.error('Upload failed:', error);
-                // Handle error (e.g., show error message to user)
             });
     };
 
-    return (
-        <div className="flex w-full items-center justify-between p-10">
-            {/* <Card className="w-[38%] p-3">
-                <CardHeader>
-                    <CardTitle>Create Content</CardTitle>
-                    <CardDescription>Upload any content of your choosing</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex w-[100%] flex-col items-center justify-center">
-                        <Card className="h-[20vh] w-full">
-                            {previewUrl && (
-                                <div className="flex h-full w-full items-center justify-center">
-                                    <img
-                                        src={previewUrl}
-                                        alt="Preview"
-                                        className="max-h-full max-w-full object-contain"
-                                    />
-                                </div>
-                            )}
-                        </Card>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleUpload}
-                            accept="image/*"
-                            className="invisible"
-                        />
-                        <Button variant="outline" onClick={handleButtonClick} disabled={!key}>
-                            Upload File
-                        </Button>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <p className="text-muted-foreground text-center text-sm">
-                        Note: The file will be encrypted before being uploaded.
-                    </p>
-                </CardFooter>
-            </Card> */}
+    const handleButtonClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
 
+    return (
+        <div className="flex w-full flex-col items-center justify-between p-10">
             <div className="flex w-full flex-col items-center justify-center gap-4 lg:flex-row lg:items-start">
                 {/* Profile Preview Card */}
                 <Card className="h-full w-full p-2 lg:w-[60%]">
                     <CardHeader>
-                        <CardTitle></CardTitle>
-                        <CardDescription></CardDescription>
+                        <CardTitle>Profile Preview</CardTitle>
+                        <CardDescription>Your public profile</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col items-center">
@@ -210,6 +159,82 @@ const CreatePage = () => {
                     </CardFooter>
                 </Card>
             </div>
+
+            {/* File Upload Section */}
+            <Card className="mt-4 w-full p-3">
+                <CardHeader>
+                    <CardTitle>File Upload</CardTitle>
+                    <CardDescription>Upload and encrypt a file</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex w-full flex-col items-center justify-center">
+                        <Card className="h-[20vh] w-full">
+                            {previewUrl && (
+                                <div className="flex h-full w-full items-center justify-center">
+                                    <img
+                                        src={previewUrl}
+                                        alt="Preview"
+                                        className="max-h-full max-w-full object-contain"
+                                    />
+                                </div>
+                            )}
+                        </Card>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleUpload}
+                            accept="image/*"
+                            className="invisible"
+                        />
+                        <Button
+                            variant="outline"
+                            onClick={handleButtonClick}
+                            disabled={!key}
+                            className="mt-2"
+                        >
+                            Upload File
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Encryption Details */}
+            {regularKey && (
+                <Card className="mt-4 w-full">
+                    <CardHeader>
+                        <CardTitle>Encryption Details</CardTitle>
+                        <CardDescription>
+                            Key and IV used for encryption (for demonstration only)
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div>
+                            <h3 className="text-lg font-semibold">Key:</h3>
+                            <p className="break-all">{regularKey}</p>
+                        </div>
+                        <div className="mt-2">
+                            <h3 className="text-lg font-semibold">IV:</h3>
+                            <p className="break-all">
+                                {Array.from(iv)
+                                    .map((b) => b.toString(16).padStart(2, '0'))
+                                    .join('')}
+                            </p>
+                        </div>
+                        {blobId && (
+                            <div className="mt-2">
+                                <h3 className="text-lg font-semibold">Blob ID:</h3>
+                                <p className="break-all">{blobId}</p>
+                            </div>
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                        <p className="text-sm text-red-500">
+                            Warning: Exposing encryption keys is not secure. This is for
+                            demonstration purposes only.
+                        </p>
+                    </CardFooter>
+                </Card>
+            )}
         </div>
     );
 };
