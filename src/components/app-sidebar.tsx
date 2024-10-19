@@ -1,4 +1,4 @@
-import { Calendar, Home, Inbox, Search, Settings } from 'lucide-react';
+import { SquarePen, MonitorPlay, Home, Search, Settings } from 'lucide-react';
 
 import {
     Sidebar,
@@ -15,27 +15,27 @@ import {
 const items = [
     {
         title: 'Home',
-        url: '#',
+        url: '/',
         icon: Home,
     },
     {
-        title: 'Inbox',
-        url: '#',
-        icon: Inbox,
-    },
-    {
-        title: 'Calendar',
-        url: '#',
-        icon: Calendar,
-    },
-    {
-        title: 'Search',
-        url: '#',
+        title: 'Explore',
+        url: '/explore',
         icon: Search,
     },
     {
+        title: 'Subscriptions',
+        url: '/subscriptions',
+        icon: MonitorPlay,
+    },
+    {
+        title: 'Create',
+        url: '/create',
+        icon: SquarePen,
+    },
+    {
         title: 'Settings',
-        url: '#',
+        url: '/settings',
         icon: Settings,
     },
 ];
