@@ -61,9 +61,19 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-                <div className="mb-2 font-sans text-xl">
-                    <ConnectButton className="w-full bg-slate-600" />
-                </div>
+                <SidebarMenu>
+                    <SidebarMenuItem key="Settings">
+                        <SidebarMenuButton asChild className="py-4">
+                            <a href={'/settings'} className="text-xl font-bold">
+                                <Settings className="mr-2" />
+                                <span>Settings</span>
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <div className="mb-2 font-sans text-xl">
+                        <ConnectButton className="w-full bg-slate-600" />
+                    </div>
+                </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
     );
