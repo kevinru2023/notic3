@@ -13,6 +13,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { PlsConnectWallet } from '@/components/pls-connect-wallet';
 
 interface Subscription {
     creator_subscription_id: string;
@@ -114,6 +115,8 @@ function Subscriptions() {
     }, [account]);
 
     console.log(userSubscriptions);
+
+    if (!account) return <PlsConnectWallet />;
 
     return (
         <div className="flex items-center justify-center">

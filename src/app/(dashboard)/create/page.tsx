@@ -21,6 +21,7 @@ import Link from 'next/link';
 import ImageUploadForm from './components/ImageUploadForm';
 import VideoUploadForm from './components/VideoUploadForm';
 import CreateProfileForm from './components/CreateProfileForm';
+import { PlsConnectWallet } from '@/components/pls-connect-wallet';
 
 const CreatePage = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,12 +44,12 @@ const CreatePage = () => {
         setIsClient(true);
     }, []);
 
-    if (isError) {
-        return <div>Error</div>;
+    if (!account) {
+        return <PlsConnectWallet />;
     }
 
-    if (!isClient) {
-        return <div className="text-4xl">Please connect your wallet</div>;
+    if (isError) {
+        return <div>Error</div>;
     }
 
     const registered = false;
